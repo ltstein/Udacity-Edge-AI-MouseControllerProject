@@ -62,19 +62,19 @@ def main(args):
 
     print("Initializing source feed...")
     # feed=InputFeeder(input_type='video', input_file='bin/demo.mp4')
-    feed=InputFeeder(input_type='image', input_file='bin/demo.png')
-    # feed=InputFeeder(input_type='cam')
+    # feed=InputFeeder(input_type='image', input_file='bin/demo.png')
+    feed=InputFeeder(input_type='cam')
     feed.load_data()
     
     for batch in feed.next_batch():
         # cv2.imshow('Frame',batch)
         # Press Q on keyboard to  exit 
-        if cv2.waitKey(0) & 0xFF == ord('q'):
+        if cv2.waitKey(5) & 0xFF == ord('q'):
             break
         coords, bounding_face = fd.predict(batch)
         box = coords[0]
         face = bounding_face[box[1]:box[3], box[0]:box[2]]
-        print(f"Face Dim Height: {face.shape[0]} :: Width: {face.shape[1]}")
+        # print(f"Face Dim Height: {face.shape[0]} :: Width: {face.shape[1]}")
         cv2.imshow('Cropped Face', face)
         cv2.imshow('Face Detection', bounding_face)
         
@@ -82,23 +82,26 @@ def main(args):
         coords, landmark_detection = fld.predict(face)
         cv2.imshow('Landmark Detection', landmark_detection)
         left_box, right_box = coords[0:2]
-        print(f"Left box: {left_box}")
-        left_eye = face[left_box[1]:left_box[3], left_box[0]:left_box[2]]
-        right_eye = face[right_box[1]:right_box[3], right_box[0]:right_box[2]]
-        cv2.imshow('left_eye', left_eye)
-        cv2.imshow('right_eye', right_eye)
+        # print(f"Left box: {left_box}")
+        right_eye = face[left_box[1]:left_box[3], left_box[0]:left_box[2]]
+        left_eye = face[right_box[1]:right_box[3], right_box[0]:right_box[2]]
+        # cv2.imshow('left_eye', left_eye)
+        # cv2.imshow('right_eye', right_eye)
+
+        # left_eye, right_eye, eyecoord, ggg = fld.predict(face)
 
         #Head Pose Estimation
         coords, head_pose = hpe.predict(face)
+        head_angles = [head_pose['angle_y_fc'], head_pose['angle_p_fc'], head_pose['angle_r_fc']]
 
         #Gaze Estimation
-        gaze = ge.
+        # expects pose as  (yaw, pitch, and roll) 
+        gaze = ge.predict(left_eye, right_eye,head_angles)
 
 
-
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
     feed.close()
-
+    cv2.destroyAllWindows
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()

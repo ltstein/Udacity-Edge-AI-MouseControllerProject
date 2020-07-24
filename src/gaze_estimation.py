@@ -56,7 +56,7 @@ class GazeEstimator:
     def check_model(self):
         raise NotImplementedError
 
-    def preprocess_input(self, image):
+    def preprocess_input(self, l_eye, r_eye, head_angles):
         '''
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
@@ -84,7 +84,7 @@ class GazeEstimator:
 
         with the name head_pose_angles and the shape [1x3].
         '''
-        raise NotImplementedError
+        left = l_eye.reshape
 
     def preprocess_output(self, outputs):
         '''
