@@ -42,7 +42,9 @@ class GazeEstimator:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        raise NotImplementedError
+        core = IECore()
+        self.net = core.load_network(
+            network=self.model, device_name=self.device, num_requests=1)
 
     def predict(self, image):
         '''

@@ -90,13 +90,11 @@ class FacialLandmarkDetector:
         '''
         
         # print("preprocess output")
-        # image = cv2.resize(image, (self.input_shape[3],self.input_shape[2]), interpolation= cv2.INTER_AREA)
         height, width = image.shape[0:2]
         print(f"Output Height: {height} :: Width: {width}")
         coordinates = []
         results = outputs['95'].flatten()
-        # print(results)
-        for i in range(0,4,2):
+        for i in range(0,len(results),2):
             point = (int(results[i]*width), int(results[i+1]*height))
             xmin = point[0]
             ymin = point[1]
@@ -111,7 +109,6 @@ class FacialLandmarkDetector:
 #     '''
         # print("Draw output")
         print(coords)
-        # image = cv2.resize(image, (self.input_shape[3],self.input_shape[2]), interpolation= cv2.INTER_AREA)
         height, width = image.shape[0:2]
         print(f"Draw Height: {height} :: Width: {width}")
         for box in coords:

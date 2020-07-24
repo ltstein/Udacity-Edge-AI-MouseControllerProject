@@ -50,13 +50,13 @@ def main(args):
     fld.load_model()
     fld_load_time = time.time() - start_fld_load_time
 
-    # start_ge_load_time = time.time()
-    # ge = GazeEstimator(
-    #     model_name='models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002',
-    #     device='CPU',
-    #     extensions=None)
-    # ge.load_model()
-    # ge_load_time = time.time() - start_ge_load_time
+    start_ge_load_time = time.time()
+    ge = GazeEstimator(
+        model_name='models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002',
+        device='CPU',
+        extensions=None)
+    ge.load_model()
+    ge_load_time = time.time() - start_ge_load_time
     
 
 
@@ -81,9 +81,19 @@ def main(args):
         #Landmark Detection
         coords, landmark_detection = fld.predict(face)
         cv2.imshow('Landmark Detection', landmark_detection)
+        left_box, right_box = coords[0:2]
+        print(f"Left box: {left_box}")
+        left_eye = face[left_box[1]:left_box[3], left_box[0]:left_box[2]]
+        right_eye = face[right_box[1]:right_box[3], right_box[0]:right_box[2]]
+        cv2.imshow('left_eye', left_eye)
+        cv2.imshow('right_eye', right_eye)
 
         #Head Pose Estimation
         coords, head_pose = hpe.predict(face)
+
+        #Gaze Estimation
+        gaze = ge.
+
 
 
         cv2.waitKey(0)
