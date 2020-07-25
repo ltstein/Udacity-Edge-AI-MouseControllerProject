@@ -62,8 +62,8 @@ def main(args):
 
     print("Initializing source feed...")
     # feed=InputFeeder(input_type='video', input_file='bin/demo.mp4')
-    # feed=InputFeeder(input_type='image', input_file='bin/demo.png')
-    feed=InputFeeder(input_type='cam')
+    feed=InputFeeder(input_type='image', input_file='bin/demo.png')
+    # feed=InputFeeder(input_type='cam')
     feed.load_data()
     
     for batch in feed.next_batch():
@@ -88,18 +88,29 @@ def main(args):
         # cv2.imshow('left_eye', left_eye)
         # cv2.imshow('right_eye', right_eye)
 
-        # left_eye, right_eye, eyecoord, ggg = fld.predict(face)
+        # left_eye, right_eye, eyecoord, previewCanvas = fld.predict(face)
+
+
+        # x0 = int(max(0, face.shape[1]*eyecoord[0][0][0]-5))
+        # y0 = int(max(0, face.shape[0]*eyecoord[0][1][0]-5))
+        # x1 = int(face.shape[1]*eyecoord[0][0][0]+5)
+        # y1 = int(face.shape[0]*eyecoord[0][1][0]+5)
+        # previewCanvas = cv2.rectangle(face, (x0, y0), (x1, y1), (255,255,255))
+                
+        # previewCanvas = cv2.rectangle(previewCanvas, (int(max(0, face.shape[1]*eyecoord[1][0][0]-5)), int(max(0, face.shape[0]*eyecoord[1][1][0]-5))), (int(face.shape[1]*eyecoord[1][0][0]+5), int(face.shape[0]*eyecoord[1][1][0]+5)), (255,255,255))
+
+        # cv2.imshow('preview', previewCanvas)
 
         #Head Pose Estimation
         coords, head_pose = hpe.predict(face)
-        head_angles = [head_pose['angle_y_fc'], head_pose['angle_p_fc'], head_pose['angle_r_fc']]
+        # head_angles = [head_pose['angle_y_fc'], head_pose['angle_p_fc'], head_pose['angle_r_fc']]
 
         #Gaze Estimation
         # expects pose as  (yaw, pitch, and roll) 
-        gaze = ge.predict(left_eye, right_eye,head_angles)
+        # gaze = ge.predict(left_eye, right_eye,head_angles)
 
 
-        # cv2.waitKey(0)
+        cv2.waitKey(0)
     feed.close()
     cv2.destroyAllWindows
 

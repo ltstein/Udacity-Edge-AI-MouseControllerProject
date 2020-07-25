@@ -20,7 +20,7 @@ class FacialLandmarkDetector:
         '''
         TODO: Use this to set your instance variables.
         '''
-        print("Initializing Facial Landmarks Model...")
+        # print("Initializing Facial Landmarks Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
@@ -52,15 +52,17 @@ class FacialLandmarkDetector:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        p_frame, p_image = self.preprocess_input(image)
-        self.input_dict = {self.input_name: p_frame}
+        self.input_blob, self.resized_input_image = self.preprocess_input(image)
+        self.input_dict = {self.input_name: self.input_blob}
         self.input = image
-        result = self.net.infer(self.input_dict)
-        coords = self.preprocess_output(result, image)
-        image = self.draw_outputs(image, coords)
-        # left_eye, right_eye, coords, input_s = self.preprocess_output(result)
-        return coords, image
-        # return left_eye, right_eye, coords, input_s
+        infer_result = self.net.infer(self.input_dict)
+        output = self.net.requests[0].outputs[self.output_name]
+        # coords = self.preprocess_output(output, self.input.shape[1], self.input.shape[0])
+        # image = self.draw_outputs(image, coords)
+        # left_eye, right_eye, coords_debug, input_s = self.preprocess_output_debug(result)
+        # return coords, image
+        # return left_eye, right_eye, coords_debug, input_s
+        return infer_result, output
 
     def check_model(self):
         raise NotImplementedError
@@ -79,33 +81,32 @@ class FacialLandmarkDetector:
 
         The expected color order is BGR.
         '''
-        image = cv2.resize(
+        resized_input_image = cv2.resize(
             image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
-        p_image = image.reshape(
+        input_blob = resized_input_image.reshape(
             1, 3, self.input_shape[2], self.input_shape[3])
 
-        return p_image, image
-    # def preprocess_output(self, outputs):
-    #     '''
-    #     Before feeding the output of this model to the next model,
-    #     you might have to preprocess the output. This function is where you can do that.
-    #     '''
-    #     self.input = self.input.transpose(1, 2, 0)
-    #     print(f"input shape {self.input.shape[0]}")
-    #     print(f"input shape {outputs[0][1][0][0]}")
-    #     leftEye = self.input[int(self.input.shape[0]*outputs[0][1][0][0])-5:int(self.input.shape[0]*outputs[0][1][0][0])+5,
-    #                          int(self.input.shape[1]*outputs[0][0][0][0])-5:int(self.input.shape[1]*outputs[0][0][0][0])+5]
-    #     rightEye = self.input[int(self.input.shape[0]*outputs[0][3][0][0])-5:int(self.input.shape[0]*outputs[0][3][0][0])+5,
-    #                           int(self.input.shape[1]*outputs[0][2][0][0])-5:int(self.input.shape[1]*outputs[0][2][0][0])+5]
-    #     if leftEye.any():
-    #         leftEye = cv2.resize(leftEye, (60, 60)).transpose((2, 0, 1))
-    #         leftEye = leftEye.reshape(1, *leftEye.shape)
-    #     if rightEye.any():
-    #         rightEye = cv2.resize(rightEye, (60, 60)).transpose((2, 0, 1))
-    #         rightEye = rightEye.reshape(1, *rightEye.shape)
-    #     return leftEye, rightEye, ((outputs[0][0], outputs[0][1]), (outputs[0][2], outputs[0][3])), self.input
+        return input_blob, resized_input_image
 
-    def preprocess_output(self, outputs, image):
+    def preprocess_output_shibin(self, outputs):
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
+        '''
+        self.input = self.input.transpose(1, 2, 0)
+        leftEye = self.input[int(self.input.shape[0]*outputs[0][1][0][0])-5:int(self.input.shape[0]*outputs[0][1][0][0])+5,
+                             int(self.input.shape[1]*outputs[0][0][0][0])-5:int(self.input.shape[1]*outputs[0][0][0][0])+5]
+        rightEye = self.input[int(self.input.shape[0]*outputs[0][3][0][0])-5:int(self.input.shape[0]*outputs[0][3][0][0])+5,
+                              int(self.input.shape[1]*outputs[0][2][0][0])-5:int(self.input.shape[1]*outputs[0][2][0][0])+5]
+        if leftEye.any():
+            leftEye = cv2.resize(leftEye, (60, 60)).transpose((2, 0, 1))
+            leftEye = leftEye.reshape(1, *leftEye.shape)
+        if rightEye.any():
+            rightEye = cv2.resize(rightEye, (60, 60)).transpose((2, 0, 1))
+            rightEye = rightEye.reshape(1, *rightEye.shape)
+        return leftEye, rightEye, ((outputs[0][0], outputs[0][1]), (outputs[0][2], outputs[0][3])), self.input
+
+    def preprocess_output(self, outputs, height, width):
     #     '''
     #     Before feeding the output of this model to the next model,
     #     you might have to preprocess the output. This function is where you can do that.
@@ -114,13 +115,13 @@ class FacialLandmarkDetector:
     #     '''
 
         # print("preprocess output")
-        height, width = image.shape[0:2]
-        print(f"Output Height: {height} :: Width: {width}")
         coordinates = []
-        radius = 30
-        results = outputs['95'].flatten()
-        for i in range(0,len(results),2):
-            point = (int(results[i]*width), int(results[i+1]*height))
+        radius = 3
+        height_factor = height/self.input_shape[0]
+        width_factor = width/self.input_shape[1]
+        
+        for i in range(0,len(outputs),2):
+            point = (int((outputs[i]*self.input_shape[1])*width_factor), int((outputs[i+1]*self.input_shape[0])*height_factor))
             xmin = point[0]-radius
             ymin = point[1]-radius
             xmax = point[0]+radius
@@ -132,14 +133,12 @@ class FacialLandmarkDetector:
         '''
         TODO: This method needs to be completed by you
         '''
+        drawn_image = image
         # print("Draw output")
-        print(coords)
-        height, width = image.shape[0:2]
-        print(f"Draw Height: {height} :: Width: {width}")
+        print(f"Drawing coords: {coords}")
         for box in coords:
-            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 1)
-            #  cv2.circle(image, point, 3, (0, 0, 255), 1)
-        return image
+            cv2.rectangle(drawn_image, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 1)
+        return drawn_image
 
 
 def main():
@@ -149,10 +148,29 @@ def main():
     fld = FacialLandmarkDetector(model)
     fld.load_model()
 
+
     face = cv2.imread(input_image)
 
-    coords, landmark_detection = fld.predict(face)
-    cv2.imshow('Landmark Detection', landmark_detection)
+    infer_result, output = fld.predict(face)
+
+    cropped_face_coords = fld.preprocess_output(infer_result['95'].flatten(), face.shape[0], face.shape[1])
+    cropped_face_drawn = fld.draw_outputs(face, cropped_face_coords)
+    cv2.imshow('Cropped Face Drawn', cropped_face_drawn)
+
+    cropped_face_coords_output = fld.preprocess_output(output.flatten(), face.shape[0], face.shape[1])
+    cropped_face_drawn_output = fld.draw_outputs(face, cropped_face_coords_output)
+    cv2.imshow('O Cropped Face Drawn', cropped_face_drawn_output)
+
+    net_input_coords = fld.preprocess_output(infer_result['95'].flatten(), fld.resized_input_image.shape[0], fld.resized_input_image.shape[1])
+    net_input_drawn = fld.draw_outputs(fld.resized_input_image, net_input_coords)
+    cv2.imshow('Net Input Drawn', net_input_drawn)
+
+    net_input_coords_output = fld.preprocess_output(infer_result['95'].flatten(), fld.resized_input_image.shape[0], fld.resized_input_image.shape[1])
+    net_input_drawn_output = fld.draw_outputs(fld.resized_input_image, net_input_coords_output)
+    cv2.imshow('O Net Input Drawn', net_input_drawn_output)
+
+
+    # cv2.imshow('Landmark Detection', landmark_detection)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
