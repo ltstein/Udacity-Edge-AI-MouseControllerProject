@@ -24,8 +24,7 @@ class FacialLandmarkDetector:
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
-        # self.threshold = threshold
-        # Check if network can be initialized. TODO: Is this deprecated?
+
         try:
             self.model = IENetwork(self.model_structure, self.model_weights)
         except Exception as e:

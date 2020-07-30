@@ -75,6 +75,8 @@ def main(args):
     feed=InputFeeder(input_type=args.input_type, input_file=args.input_file)
     if args.input_type ==  'image':
         image = True
+    else:
+        image = False
     # feed=InputFeeder(input_type='video', input_file='bin/demo.mp4')
     # feed=InputFeeder(input_type='image', input_file='bin/demo_1.png')
     # feed=InputFeeder(input_type='cam')
