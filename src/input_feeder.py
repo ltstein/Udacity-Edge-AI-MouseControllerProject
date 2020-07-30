@@ -39,8 +39,11 @@ class InputFeeder:
         else:
             while True:
                 for _ in range(10):
-                    _, frame=self.cap.read()
-                yield frame
+                    ret, frame=self.cap.read()
+                if ret:
+                    yield frame
+                else:
+                    return False
 
 
     def close(self):

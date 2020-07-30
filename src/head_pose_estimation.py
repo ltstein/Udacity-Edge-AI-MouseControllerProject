@@ -18,7 +18,7 @@ class HeadPoseEstimator:
         '''
         TODO: Use this to set your instance variables.
         '''
-        print("Initializing Head Pose Estimation Model...")
+        # print("Initializing Head Pose Estimation Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
@@ -53,10 +53,16 @@ class HeadPoseEstimator:
         '''
         p_frame = self.preprocess_input(image)
         input_dict = {self.input_name: p_frame}
-        result = self.net.infer(input_dict)
-        coords = self.preprocess_output(result, image)
-        image = self.draw_outputs(image, coords)
-        return coords, image
+        start_time = time.time()
+
+        self.net.start_async( request_id = 0, inputs=input_dict)
+        status = self.net.requests[0].wait(-1)
+
+        if status == 0:
+            output = self.net.requests[0].outputs
+            self.infer_time = time.time() - start_time
+            yaw, pitch, roll = self.preprocess_output(output)
+        return yaw, pitch, roll
 
     def check_model(self):
         raise NotImplementedError
@@ -74,7 +80,7 @@ class HeadPoseEstimator:
 
         return p_image
 
-    def preprocess_output(self, outputs, image):
+    def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
@@ -94,26 +100,5 @@ class HeadPoseEstimator:
         Each output contains one float value that represents value in Tait-Bryan angles (yaw, pitch or roll).
 
         '''
-         # print("preprocess output")
-        height, width = image.shape[0:2]
-        coordinates = []
-        print(outputs)
-        # results = outputs['detection_out']
-        # for item in results[0][0]:
-        #     conf = item[2]
-        #     if conf >= 0.6:
-        #         xmin = int(item[3] * width)
-        #         ymin = int(item[4] * height)
-        #         xmax = int(item[5] * width)
-        #         ymax = int(item[6] * height)
-        #         coordinates.append((xmin, ymin, xmax, ymax))
-        return coordinates
+        return outputs['angle_y_fc'], outputs['angle_p_fc'], outputs['angle_r_fc']
 
-    def draw_outputs(self, image, coords):
-#     '''
-#     TODO: This method needs to be completed by you
-#     '''
-        # print("Draw output")
-        for box in coords:
-                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 1)
-        return image

@@ -18,7 +18,7 @@ class GazeEstimator:
         '''
         TODO: Use this to set your instance variables.
         '''
-        print("Initializing Gaze Estimation Model...")
+        # print("Initializing Gaze Estimation Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
@@ -46,12 +46,22 @@ class GazeEstimator:
         self.net = core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
 
-    def predict(self, image):
+    def predict(self, left_eye, right_eye, head_angles):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        raise NotImplementedError
+        head_pose_angle, left_eye_input, right_eye_input = self.preprocess_input(left_eye, right_eye, head_angles)
+        input_dict = {'head_pose_angles':head_pose_angle,'left_eye_image':left_eye_input,'right_eye_image':right_eye_input}
+        
+        start_time = time.time()
+        self.net.start_async( request_id = 0, inputs=input_dict)
+        status = self.net.requests[0].wait(-1)
+
+        if status == 0:
+            output = self.net.requests[0].outputs[self.output_name]
+            self.infer_time = time.time() - start_time
+        return output
 
     def check_model(self):
         raise NotImplementedError
@@ -84,7 +94,19 @@ class GazeEstimator:
 
         with the name head_pose_angles and the shape [1x3].
         '''
-        left = l_eye.reshape
+
+        #Create input blobs
+        p_l_eye = cv2.resize(l_eye, (60,60), interpolation=cv2.INTER_AREA)
+        p_l_eye = p_l_eye.transpose((2, 0, 1))
+        l_input_blob = p_l_eye.reshape(1, 3, 60, 60)
+
+        p_r_eye = cv2.resize(r_eye, (60,60), interpolation=cv2.INTER_AREA)
+        p_r_eye = p_r_eye.transpose((2, 0, 1))
+        r_input_blob = p_r_eye.reshape(1, 3, 60,60)
+
+        head_input_blob = np.array([[head_angles[0], head_angles[1], head_angles[2]]])
+
+        return head_input_blob, l_input_blob, r_input_blob
 
     def preprocess_output(self, outputs):
         '''

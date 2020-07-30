@@ -19,7 +19,7 @@ class FaceDetector:
         '''
         TODO: Use this to set your instance variables.
         '''
-        print("Initializing Face Detection Model...")
+        # print("Initializing Face Detection Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
@@ -54,9 +54,15 @@ class FaceDetector:
         '''
         p_frame = self.preprocess_input(image)
         input_dict = {self.input_name: p_frame}
-        result = self.net.infer(input_dict)
-        coords = self.preprocess_output(result, image)
-        image = self.draw_outputs(image, coords)
+        start_time = time.time()
+        self.net.start_async( request_id = 0, inputs=input_dict)
+        status = self.net.requests[0].wait(-1)
+
+        if status == 0:
+            output = self.net.requests[0].outputs[self.output_name]
+            self.infer_time = time.time() - start_time
+            coords = self.preprocess_output(output, image)
+            # image = self.draw_outputs(image, coords)
         return coords, image
         
 
@@ -102,7 +108,7 @@ class FaceDetector:
         # print("preprocess output")
         height, width = image.shape[0:2]
         coordinates = []
-        results = outputs['detection_out']
+        results = outputs
         for item in results[0][0]:
             conf = item[2]
             if conf >= 0.6:
