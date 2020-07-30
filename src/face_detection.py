@@ -62,7 +62,7 @@ class FaceDetector:
             output = self.net.requests[0].outputs[self.output_name]
             self.infer_time = time.time() - start_time
             coords = self.preprocess_output(output, image)
-            # image = self.draw_outputs(image, coords)
+            image = self.draw_outputs(image, coords)
         return coords, image
         
 
