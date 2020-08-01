@@ -156,3 +156,4 @@ cython_debug/
 /models/intel/landmarks-regression-retail-0009/FP32-INT8/landmarks-regression-retail-0009.xml
 /models/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.bin
 /models/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml
+/output/*
