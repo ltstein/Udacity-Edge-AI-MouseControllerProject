@@ -43,8 +43,10 @@ class FaceDetector:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
+        start_time = time.time()
         self.net = self.core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
+        self.load_time = time.time() - start_time
 
     def predict(self, image):
         '''
@@ -83,9 +85,11 @@ class FaceDetector:
         Expected color order is BGR.
 
         '''
+        start_time = time.time()
         p_image = cv2.resize(
             image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
         p_image = np.moveaxis(p_image, -1, 0)
+        self.preprocess_input_time = time.time() - start_time
 
         return p_image
 
@@ -103,6 +107,7 @@ class FaceDetector:
         (x_max, y_max) - coordinates of the bottom right bounding box corner.
 
         '''
+        start_time = time.time()
         height, width = image.shape[0:2]
         coordinates = []
         results = outputs
@@ -114,14 +119,14 @@ class FaceDetector:
                 xmax = int(item[5] * width)
                 ymax = int(item[6] * height)
                 coordinates.append((xmin, ymin, xmax, ymax))
+        self.preprocess_output_time = time.time() - start_time
         return coordinates
 
     def draw_outputs(self, image, coords):
-    '''
-     TODO: This method needs to be completed by you
-     '''
-
-       for box in coords:
+        '''
+        TODO: This method needs to be completed by you
+        '''
+        for box in coords:
             cv2.rectangle(image, (box[0], box[1]),
                           (box[2], box[3]), (0, 0, 255), 1)
         return image

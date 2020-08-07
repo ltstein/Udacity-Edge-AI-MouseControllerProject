@@ -41,9 +41,11 @@ class HeadPoseEstimator:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
+        start_time = time.time()
         core = IECore()
         self.net = core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
+        self.load_time = time.time() - start_time
 
     def predict(self, image):
         '''
@@ -74,11 +76,12 @@ class HeadPoseEstimator:
         name: "data" , shape: [1x3x60x60] - An input image in [1xCxHxW] format. Expected color order is BGR.
 
         '''
+        start_time = time.time()
         p_image = cv2.resize(
             image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
         p_image = p_image.reshape(
             1, 3, self.input_shape[2], self.input_shape[3])
-
+        self.preprocess_input_time = time.time() - start_time
         return p_image
 
     def preprocess_output(self, outputs):

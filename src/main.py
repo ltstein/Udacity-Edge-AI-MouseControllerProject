@@ -30,47 +30,44 @@ def main(args):
 
     print("Initializing models...")
 
-    start_fd_load_time = time.time()
     
     fd = FaceDetector(
         model_name='models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001',
         device=args.device,
         extensions=None)
-    fd.load_model()
-    fd_load_time = time.time() - start_fd_load_time
-
-    if args.v: print(f"Face Detection Load Time: {fd_load_time}")
-    log.write("FD_LD: " + str(fd_load_time) + "\n")
     
-    start_hpe_load_time = time.time()
+    fd.load_model()
+
+    if args.v: print(f"Face Detection Load Time: {fd.load_time}")
+    
+    
     hpe = HeadPoseEstimator(
         model_name=f'models/intel/head-pose-estimation-adas-0001/{args.hpe}/head-pose-estimation-adas-0001',
         device=args.device,
         extensions=None)
     hpe.load_model()
-    hpe_load_time = time.time() - start_hpe_load_time
-    if args.v: print(f"Head Pose Estimation Load Time: {hpe_load_time}")
-    log.write("HPE_LD: " + str(hpe_load_time) + "\n")
+    
+    if args.v: print(f"Head Pose Estimation Load Time: {hpe.load_time}")
+    
 
-    start_fld_load_time = time.time()
+    
     fld = FacialLandmarkDetector(
         model_name=f'models/intel/landmarks-regression-retail-0009/{args.fld}/landmarks-regression-retail-0009',
         device=args.device,
         extensions=None)
     fld.load_model()
-    fld_load_time = time.time() - start_fld_load_time
-    if args.v: print(f"Facial Landmarks Detection Load Time: {fld_load_time}")
-    log.write("FLD_LD: " + str(fld_load_time) + "\n")
+    
+    if args.v: print(f"Facial Landmarks Detection Load Time: {fld.load_time}")
+    
 
-    start_ge_load_time = time.time()
+    
     ge = GazeEstimator(
         model_name=f'models/intel/gaze-estimation-adas-0002/{args.ge}/gaze-estimation-adas-0002',
         device=args.device,
         extensions=None)
     ge.load_model()
-    ge_load_time = time.time() - start_ge_load_time
-    if args.v: print(f"Gaze Estimation Load Time: {ge_load_time}")
-    log.write("GE_LD: " + str(ge_load_time) + "\n")
+    
+    if args.v: print(f"Gaze Estimation Load Time: {ge.load_time}")
 
     image = False
 
@@ -125,7 +122,8 @@ def main(args):
         cv2.putText(face, 'R', (right_box[0], right_box[3]),
                             cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
 
-        if args.v: print(f"Eye Shape: {left_eye.shape} :: {right_eye.shape}")
+        if args.v: 
+            print(f"Eye Shape: {left_eye.shape} :: {right_eye.shape}")
 
         #Head Pose Estimation
         head_yaw, head_pitch, head_roll = hpe.predict(face)
@@ -154,9 +152,24 @@ def main(args):
             mouse = MouseController(precision='medium', speed='medium')
             mouse.move(gaze[0][0],gaze[0][1])
         
-        if image: cv2.imshow('Arrows', arrows)
+        if image: 
+            cv2.imshow('Arrows', arrows)
 
         if image: 
+            log.write("FD_LoadTime: " + str(fd.load_time) + "\n")
+            log.write("FD_PreprocessTime: " + str(fd.preprocess_input_time) + "\n")
+            log.write("FD_PostrocessTime: " + str(fd.preprocess_output_time) + "\n")
+
+            log.write("FLD_LoadTime: " + str(fld.load_time) + "\n")
+            log.write("FLD_PreprocessTime: " + str(fld.preprocess_input_time) + "\n")
+            log.write("FLD_PostprocessTime: " + str(fld.preprocess_output_time) + "\n")
+
+            log.write("HPE_LoadTime: " + str(hpe.load_time) + "\n")
+            log.write("HPE_PreprocessTime: " + str(hpe.preprocess_input_time) + "\n")
+            
+            log.write("GE_LoadTime: " + str(ge.load_time) + "\n")
+            log.write("GE_PreprocessTime: " + str(ge.preprocess_input_time) + "\n")
+
             cv2.waitKey(0)
         else:
             if cv2.waitKey(15) & 0xFF == ord('q'):

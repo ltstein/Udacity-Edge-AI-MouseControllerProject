@@ -42,9 +42,11 @@ class FacialLandmarkDetector:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
+        start_time = time.time()
         core = IECore()
         self.net = core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
+        self.load_time = time.time() - start_time
 
     def predict(self, image):
         '''
@@ -89,6 +91,7 @@ class FacialLandmarkDetector:
 
         The expected color order is BGR.
         '''
+        start_time = time.time()
         resized_input_image = cv2.resize(
             image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
 
@@ -97,16 +100,17 @@ class FacialLandmarkDetector:
         input_blob = resized_input_image.reshape(
             1, 3, self.input_shape[2], self.input_shape[3])
 
+        self.preprocess_input_time = time.time() - start_time
         return input_blob, resized_input_image
 
     def preprocess_output(self, outputs, height, width):
-         '''
-         Before feeding the output of this model to the next model,
-         you might have to preprocess the output. This function is where you can do that.
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
 
-         The net outputs a blob with the shape: [1, 10], containing a row-vector of 10 floating point values for five landmarks coordinates in the form (x0, y0, x1, y1, ..., x5, y5). All the coordinates are normalized to be in range [0,1].
-         '''
-
+        The net outputs a blob with the shape: [1, 10], containing a row-vector of 10 floating point values for five landmarks coordinates in the form (x0, y0, x1, y1, ..., x5, y5). All the coordinates are normalized to be in range [0,1].
+        '''
+        start_time = time.time()
         coordinates = []
         points = []
         radius = 30
@@ -123,6 +127,7 @@ class FacialLandmarkDetector:
             # Sanitize coordinates to be between 0 and height or width
             coordinates.append((xmin, ymin, xmax, ymax))
             points.append(point)
+        self.preprocess_output_time = time.time() - start_time
         return coordinates, points
 
     def draw_outputs(self, image, coords):

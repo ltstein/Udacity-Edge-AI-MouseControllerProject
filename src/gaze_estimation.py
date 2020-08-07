@@ -41,9 +41,11 @@ class GazeEstimator:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
+        start_time = time.time()
         core = IECore()
         self.net = core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
+        self.load_time = time.time() - start_time
 
     def predict(self, left_eye, right_eye, head_angles):
         '''
@@ -95,7 +97,7 @@ class GazeEstimator:
 
         with the name head_pose_angles and the shape [1x3].
         '''
-
+        start_time = time.time()
         # Create input blobs
         p_l_eye = cv2.resize(l_eye, (60, 60), interpolation=cv2.INTER_AREA)
         p_l_eye = p_l_eye.transpose((2, 0, 1))
@@ -107,7 +109,7 @@ class GazeEstimator:
 
         head_input_blob = np.array(
             [[head_angles[0], head_angles[1], head_angles[2]]])
-
+        self.preprocess_input_time = time.time() - start_time
         return head_input_blob, l_input_blob, r_input_blob
 
     def preprocess_output(self, outputs):
