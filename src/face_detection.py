@@ -10,6 +10,7 @@ import os
 from openvino.inference_engine import IENetwork, IECore
 import time
 import numpy as np
+import logging
 
 class FaceDetector:
     '''
@@ -19,6 +20,8 @@ class FaceDetector:
         '''
         TODO: Use this to set your instance variables.
         '''
+        logger = logging.getLogger(__name__)
+        logger.info("Logging from Face Detection")
         # print("Initializing Face Detection Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'

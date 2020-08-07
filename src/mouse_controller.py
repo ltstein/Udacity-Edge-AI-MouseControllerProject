@@ -8,9 +8,12 @@ will move the pointer.
 This class is provided to help get you started; you can choose whether you want to use it or create your own from scratch.
 '''
 import pyautogui
+import logging
 
 class MouseController:
     def __init__(self, precision, speed):
+        logger = logging.getLogger(__name__)
+        logger.info("Logging from Mouse Controller")
         precision_dict={'high':100, 'low':1000, 'medium':500}
         speed_dict={'fast':1, 'slow':10, 'medium':5}
 

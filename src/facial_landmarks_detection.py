@@ -9,6 +9,7 @@ import os
 from openvino.inference_engine import IENetwork, IECore
 import time
 import numpy as np
+import logging
 
 
 class FacialLandmarkDetector:
@@ -20,6 +21,8 @@ class FacialLandmarkDetector:
         '''
         TODO: Use this to set your instance variables.
         '''
+        logger = logging.getLogger(__name__)
+        logger.info("Logging from Facial Landmarks Detection")
         # print("Initializing Facial Landmarks Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'

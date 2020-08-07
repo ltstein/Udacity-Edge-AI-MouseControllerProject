@@ -9,6 +9,7 @@ Sample usage:
 '''
 import cv2
 from numpy import ndarray
+import logging
 
 class InputFeeder:
     def __init__(self, input_type, input_file=None):
@@ -17,6 +18,8 @@ class InputFeeder:
                     or 'cam' to use webcam feed.
         input_file: str, The file that contains the input image or video file. Leave empty for cam input_type.
         '''
+        logger = logging.getLogger(__name__)
+        logger.info("Logging from Input Feeder")
         self.input_type=input_type
         if input_type=='video' or input_type=='image':
             self.input_file=input_file

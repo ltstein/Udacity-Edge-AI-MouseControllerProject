@@ -1,4 +1,4 @@
-#main.py
+# main.py
 
 import sys
 import argparse
@@ -7,8 +7,9 @@ import os
 from openvino.inference_engine import IENetwork, IECore
 import time
 import numpy as np
+import logging
 
-#Import local scripts for processing pipeline
+# Import local scripts for processing pipeline
 from face_detection import FaceDetector
 from facial_landmarks_detection import FacialLandmarkDetector
 from head_pose_estimation import HeadPoseEstimator
@@ -26,12 +27,23 @@ def main(args):
     if not os.path.exists('output'):
         os.makedirs('output')
     print(f"Logging to: output/{log_name}")
+    logging.basicConfig(
+        level=logging.INFO, 
+        format='%(name)s - %(levelname)s - %(message)s',
+        handlers = [
+            logging.FileHandler('test.log',mode='w'),
+            logging.StreamHandler(sys.stdout,)
+        ]
+        )
+    logger = logging.getLogger(__name__)
     log = open('output/'+log_name, 'w+')
+    logger.info('Main Logger Started')
+    logger.debug('This is a debug message')
 
     print("Initializing models...")
 
     start_fd_load_time = time.time()
-    
+
     fd = FaceDetector(
         model_name='models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001',
         device=args.device,
@@ -39,9 +51,10 @@ def main(args):
     fd.load_model()
     fd_load_time = time.time() - start_fd_load_time
 
-    if args.v: print(f"Face Detection Load Time: {fd_load_time}")
+    if args.v:
+        print(f"Face Detection Load Time: {fd_load_time}")
     log.write("FD_LD: " + str(fd_load_time) + "\n")
-    
+
     start_hpe_load_time = time.time()
     hpe = HeadPoseEstimator(
         model_name=f'models/intel/head-pose-estimation-adas-0001/{args.hpe}/head-pose-estimation-adas-0001',
@@ -49,7 +62,8 @@ def main(args):
         extensions=None)
     hpe.load_model()
     hpe_load_time = time.time() - start_hpe_load_time
-    if args.v: print(f"Head Pose Estimation Load Time: {hpe_load_time}")
+    if args.v:
+        print(f"Head Pose Estimation Load Time: {hpe_load_time}")
     log.write("HPE_LD: " + str(hpe_load_time) + "\n")
 
     start_fld_load_time = time.time()
@@ -59,7 +73,8 @@ def main(args):
         extensions=None)
     fld.load_model()
     fld_load_time = time.time() - start_fld_load_time
-    if args.v: print(f"Facial Landmarks Detection Load Time: {fld_load_time}")
+    if args.v:
+        print(f"Facial Landmarks Detection Load Time: {fld_load_time}")
     log.write("FLD_LD: " + str(fld_load_time) + "\n")
 
     start_ge_load_time = time.time()
@@ -69,14 +84,15 @@ def main(args):
         extensions=None)
     ge.load_model()
     ge_load_time = time.time() - start_ge_load_time
-    if args.v: print(f"Gaze Estimation Load Time: {ge_load_time}")
+    if args.v:
+        print(f"Gaze Estimation Load Time: {ge_load_time}")
     log.write("GE_LD: " + str(ge_load_time) + "\n")
 
     image = False
 
     print("Initializing source feed...")
-    feed=InputFeeder(input_type=args.input_type, input_file=args.input_file)
-    if args.input_type ==  'image':
+    feed = InputFeeder(input_type=args.input_type, input_file=args.input_file)
+    if args.input_type == 'image':
         image = True
     # feed=InputFeeder(input_type='video', input_file='bin/demo.mp4')
     # feed=InputFeeder(input_type='image', input_file='bin/demo_1.png')
@@ -84,10 +100,12 @@ def main(args):
     feed.load_data()
 
     for batch in feed.next_batch():
-        if args.v: print()
-        cv2.imshow('Batch',batch)
-        if image: cv2.imwrite('output/Batch.png', batch)
-        # Press Q on keyboard to  exit 
+        if args.v:
+            print()
+        cv2.imshow('Batch', batch)
+        if image:
+            cv2.imwrite('output/Batch.png', batch)
+        # Press Q on keyboard to  exit
         # if cv2.waitKey(5) & 0xFF == ord('q'):
         #     break
 
@@ -96,23 +114,30 @@ def main(args):
         if not coords:
             print("No face")
             continue
-        if image: cv2.imwrite('output/Face.png', bounding_face)
+        if image:
+            cv2.imwrite('output/Face.png', bounding_face)
         box = coords[0]
         face = bounding_face[box[1]:box[3], box[0]:box[2]]
         # print(f"Face Dim Height: {face.shape[0]} :: Width: {face.shape[1]}")
-        if args.v: print(f"Face Time: {fd.infer_time}")
+        if args.v:
+            print(f"Face Time: {fd.infer_time}")
         log.write("FD_infer: " + str(fd.infer_time) + "\n")
-        if image: cv2.imshow('Cropped Face', face)
+        if image:
+            cv2.imshow('Cropped Face', face)
         # cv2.imshow('Face Detection', bounding_face)
-        
-        #Landmark Detection
+
+        # Landmark Detection
         coords, landmark_detection, landmark_points = fld.predict(face)
-        if image: cv2.imwrite('output/Landmarks.png', landmark_detection)
-        if image: cv2.imshow('Landmark Detection', landmark_detection)
-        if args.v: print(f"Landmark Time: {fld.infer_time}")
+        if image:
+            cv2.imwrite('output/Landmarks.png', landmark_detection)
+        if image:
+            cv2.imshow('Landmark Detection', landmark_detection)
+        if args.v:
+            print(f"Landmark Time: {fld.infer_time}")
         log.write("FLD_infer: " + str(fld.infer_time) + "\n")
         right_box, left_box = coords[0:2]
-        if args.v: print(f"Eye Coords: {coords}")
+        if args.v:
+            print(f"Eye Coords: {coords}")
 
         if left_box == None or right_box == None:
             print("No eyes")
@@ -120,44 +145,50 @@ def main(args):
 
         left_eye = face[left_box[1]:left_box[3], left_box[0]:left_box[2]]
         cv2.putText(face, 'L', (left_box[0], left_box[3]),
-                            cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+                    cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
 
         right_eye = face[right_box[1]:right_box[3], right_box[0]:right_box[2]]
         cv2.putText(face, 'R', (right_box[0], right_box[3]),
-                            cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+                    cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
 
-        if args.v: print(f"Eye Shape: {left_eye.shape} :: {right_eye.shape}")
+        if args.v:
+            print(f"Eye Shape: {left_eye.shape} :: {right_eye.shape}")
 
-        #Head Pose Estimation
+        # Head Pose Estimation
         head_yaw, head_pitch, head_roll = hpe.predict(face)
-        if args.v: print(f"Head Pose Time: {hpe.infer_time}")
+        if args.v:
+            print(f"Head Pose Time: {hpe.infer_time}")
         log.write("HPE_infer: " + str(hpe.infer_time) + "\n")
         head_angles = [head_yaw[0][0], head_pitch[0][0], head_roll[0][0]]
 
-
-        #Gaze Estimation
-        # expects pose as  (yaw, pitch, and roll) 
+        # Gaze Estimation
+        # expects pose as  (yaw, pitch, and roll)
         gaze = ge.predict(left_eye, right_eye, head_angles)
         # print(f"Gaze: {gaze}")
         # image, start_point, end_point, color[, thickness
         # print(f"Points: {landmark_points}")
-        if args.v: print(f"Gaze Time: {ge.infer_time}")
+        if args.v:
+            print(f"Gaze Time: {ge.infer_time}")
         log.write("GE_infer: " + str(ge.infer_time) + "\n")
         gaze_point = (int(gaze[0][0]*50), int(gaze[0][1]*50))
         # print(f"Gaze point: {gaze_point}")
 
         # cv2.arrowedLine(image, start_point, end_point, color[, thickness[, line_type[, shift[, tipLength]]]])
-        arrows = cv2.arrowedLine(face, landmark_points[0], (landmark_points[0][0] + gaze_point[0], landmark_points[0][1] - gaze_point[1]), (0,0,255), 2)
-        arrows = cv2.arrowedLine(face, landmark_points[1], (landmark_points[1][0] + gaze_point[0], landmark_points[1][1] - gaze_point[1]), (0,0,255), 2)
-        if image: cv2.imwrite('output/Gaze.png', arrows)
-        
-        if not image: 
-            mouse = MouseController(precision='medium', speed='medium')
-            mouse.move(gaze[0][0],gaze[0][1])
-        
-        if image: cv2.imshow('Arrows', arrows)
+        arrows = cv2.arrowedLine(face, landmark_points[0], (
+            landmark_points[0][0] + gaze_point[0], landmark_points[0][1] - gaze_point[1]), (0, 0, 255), 2)
+        arrows = cv2.arrowedLine(face, landmark_points[1], (
+            landmark_points[1][0] + gaze_point[0], landmark_points[1][1] - gaze_point[1]), (0, 0, 255), 2)
+        if image:
+            cv2.imwrite('output/Gaze.png', arrows)
 
-        if image: 
+        if not image:
+            mouse = MouseController(precision='medium', speed='medium')
+            mouse.move(gaze[0][0], gaze[0][1])
+
+        if image:
+            cv2.imshow('Arrows', arrows)
+
+        if image:
             cv2.waitKey(0)
         else:
             if cv2.waitKey(15) & 0xFF == ord('q'):
@@ -167,16 +198,23 @@ def main(args):
     log.close()
     cv2.destroyAllWindows
 
-if __name__ =='__main__':
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--model', required=True)
-    parser.add_argument('-d','--device', default='CPU') #CPU, GPU
-    parser.add_argument('-hpe', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str, help='Set precision for Head Pose Estimation Model') 
-    parser.add_argument('-fld', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str,help='Set precision for Facial Landmark Detection Model') 
-    parser.add_argument('-ge', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str,help='Set precision for Gaze Estimation Model')  
-    parser.add_argument('-it','--input_type', default='image', type=str) #video, cam, image
-    parser.add_argument('-if','--input_file', default='bin/demo_1.png',type=str,) #path to file
-    parser.add_argument('-v', action='store_true', help='Increase verbosity of console output')
+    parser.add_argument('-d', '--device', default='CPU')  # CPU, GPU
+    parser.add_argument('-hpe', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Head Pose Estimation Model')
+    parser.add_argument('-fld', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Facial Landmark Detection Model')
+    parser.add_argument('-ge', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Gaze Estimation Model')
+    parser.add_argument('-it', '--input_type', default='image', type=str,
+                        choices=['video', 'cam', 'image'])  # video, cam, image
+    parser.add_argument('-if', '--input_file',
+                        default='bin/demo_1.png', type=str,)  # path to file
+    parser.add_argument('-v', action='store_true',
+                        help='Increase verbosity of console output')
 
     args = parser.parse_args()
 
