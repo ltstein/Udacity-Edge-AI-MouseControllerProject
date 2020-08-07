@@ -10,20 +10,20 @@ from openvino.inference_engine import IENetwork, IECore
 import time
 import numpy as np
 
+
 class HeadPoseEstimator:
     '''
     Class for the Head Pose Estimation Model.
     '''
+
     def __init__(self, model_name, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
-        # print("Initializing Head Pose Estimation Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
-        # self.threshold = threshold
-        # Check if network can be initialized. TODO: Is this deprecated?
+        # Check if network can be initialized.
         try:
             self.model = IENetwork(self.model_structure, self.model_weights)
         except Exception as e:
@@ -34,7 +34,6 @@ class HeadPoseEstimator:
         self.input_shape = self.model.inputs[self.input_name].shape
         self.output_name = next(iter(self.model.outputs))
         self.output_shape = self.model.outputs[self.output_name].shape
-
 
     def load_model(self):
         '''
@@ -55,7 +54,7 @@ class HeadPoseEstimator:
         input_dict = {self.input_name: p_frame}
         start_time = time.time()
 
-        self.net.start_async( request_id = 0, inputs=input_dict)
+        self.net.start_async(request_id=0, inputs=input_dict)
         status = self.net.requests[0].wait(-1)
 
         if status == 0:
@@ -71,12 +70,14 @@ class HeadPoseEstimator:
         '''
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
-        
+
         name: "data" , shape: [1x3x60x60] - An input image in [1xCxHxW] format. Expected color order is BGR.
-        
+
         '''
-        p_image = cv2.resize(image, (self.input_shape[3],self.input_shape[2]), interpolation= cv2.INTER_AREA)
-        p_image = p_image.reshape(1, 3, self.input_shape[2], self.input_shape[3])
+        p_image = cv2.resize(
+            image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
+        p_image = p_image.reshape(
+            1, 3, self.input_shape[2], self.input_shape[3])
 
         return p_image
 
@@ -84,7 +85,7 @@ class HeadPoseEstimator:
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
-        
+
         Output layer names in Inference Engine format:
 
         name: "angle_y_fc", shape: [1, 1] - Estimated yaw (in degrees).
@@ -101,4 +102,3 @@ class HeadPoseEstimator:
 
         '''
         return outputs['angle_y_fc'], outputs['angle_p_fc'], outputs['angle_r_fc']
-

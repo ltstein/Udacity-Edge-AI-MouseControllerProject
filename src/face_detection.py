@@ -11,20 +11,21 @@ from openvino.inference_engine import IENetwork, IECore
 import time
 import numpy as np
 
+
 class FaceDetector:
     '''
     Class for the Face Detection Model.
     '''
+
     def __init__(self, model_name, device='CPU', extensions=None):
         '''
         TODO: Use this to set your instance variables.
         '''
-        # print("Initializing Face Detection Model...")
         self.model_weights = model_name+'.bin'
         self.model_structure = model_name+'.xml'
         self.device = device
-        # self.threshold = threshold
-        # Check if network can be initialized. TODO: Is this deprecated?
+        # Check if network can be initialized.
+        self.core = IECore()
         try:
             self.model = IENetwork(self.model_structure, self.model_weights)
         except Exception as e:
@@ -42,9 +43,7 @@ class FaceDetector:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        # print("Load Model")
-        core = IECore()
-        self.net = core.load_network(
+        self.net = self.core.load_network(
             network=self.model, device_name=self.device, num_requests=1)
 
     def predict(self, image):
@@ -55,7 +54,7 @@ class FaceDetector:
         p_frame = self.preprocess_input(image)
         input_dict = {self.input_name: p_frame}
         start_time = time.time()
-        self.net.start_async( request_id = 0, inputs=input_dict)
+        self.net.start_async(request_id=0, inputs=input_dict)
         status = self.net.requests[0].wait(-1)
 
         if status == 0:
@@ -64,7 +63,6 @@ class FaceDetector:
             coords = self.preprocess_output(output, image)
             image = self.draw_outputs(image, coords)
         return coords, image
-        
 
     def check_model(self):
         raise NotImplementedError
@@ -85,8 +83,8 @@ class FaceDetector:
         Expected color order is BGR.
 
         '''
-        # print("Preprocessing input...")
-        p_image = cv2.resize(image, (self.input_shape[3],self.input_shape[2]), interpolation= cv2.INTER_AREA)
+        p_image = cv2.resize(
+            image, (self.input_shape[3], self.input_shape[2]), interpolation=cv2.INTER_AREA)
         p_image = np.moveaxis(p_image, -1, 0)
 
         return p_image
@@ -105,7 +103,6 @@ class FaceDetector:
         (x_max, y_max) - coordinates of the bottom right bounding box corner.
 
         '''
-        # print("preprocess output")
         height, width = image.shape[0:2]
         coordinates = []
         results = outputs
@@ -120,10 +117,11 @@ class FaceDetector:
         return coordinates
 
     def draw_outputs(self, image, coords):
-#     '''
-#     TODO: This method needs to be completed by you
-#     '''
-        # print("Draw output")
-        for box in coords:
-                cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 1)
+    '''
+     TODO: This method needs to be completed by you
+     '''
+
+       for box in coords:
+            cv2.rectangle(image, (box[0], box[1]),
+                          (box[2], box[3]), (0, 0, 255), 1)
         return image

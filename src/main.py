@@ -78,34 +78,33 @@ def main(args):
     feed=InputFeeder(input_type=args.input_type, input_file=args.input_file)
     if args.input_type ==  'image':
         image = True
-    # feed=InputFeeder(input_type='video', input_file='bin/demo.mp4')
-    # feed=InputFeeder(input_type='image', input_file='bin/demo_1.png')
-    # feed=InputFeeder(input_type='cam')
+
     feed.load_data()
 
     for batch in feed.next_batch():
-        if args.v: print()
-        cv2.imshow('Batch',batch)
-        if image: cv2.imwrite('output/Batch.png', batch)
-        # Press Q on keyboard to  exit 
-        # if cv2.waitKey(5) & 0xFF == ord('q'):
-        #     break
+        if args.v:
+            print()
+        cv2.imshow('Batch', batch)
+        if image:
+            cv2.imwrite('output/Batch.png', batch)
+
 
         coords, bounding_face = fd.predict(batch)
-        # print(f"coords: {coords}")
         if not coords:
             print("No face")
             continue
         if image: cv2.imwrite('output/Face.png', bounding_face)
         box = coords[0]
         face = bounding_face[box[1]:box[3], box[0]:box[2]]
-        # print(f"Face Dim Height: {face.shape[0]} :: Width: {face.shape[1]}")
-        if args.v: print(f"Face Time: {fd.infer_time}")
+
+        if args.v:
+            print(f"Face Time: {fd.infer_time}")
         log.write("FD_infer: " + str(fd.infer_time) + "\n")
-        if image: cv2.imshow('Cropped Face', face)
-        # cv2.imshow('Face Detection', bounding_face)
-        
-        #Landmark Detection
+        if image:
+            cv2.imshow('Cropped Face', face)
+
+
+        # Landmark Detection
         coords, landmark_detection, landmark_points = fld.predict(face)
         if image: cv2.imwrite('output/Landmarks.png', landmark_detection)
         if image: cv2.imshow('Landmark Detection', landmark_detection)
@@ -138,20 +137,20 @@ def main(args):
         #Gaze Estimation
         # expects pose as  (yaw, pitch, and roll) 
         gaze = ge.predict(left_eye, right_eye, head_angles)
-        # print(f"Gaze: {gaze}")
-        # image, start_point, end_point, color[, thickness
-        # print(f"Points: {landmark_points}")
-        if args.v: print(f"Gaze Time: {ge.infer_time}")
+
+        if args.v:
+            print(f"Gaze Time: {ge.infer_time}")
         log.write("GE_infer: " + str(ge.infer_time) + "\n")
         gaze_point = (int(gaze[0][0]*50), int(gaze[0][1]*50))
-        # print(f"Gaze point: {gaze_point}")
 
-        # cv2.arrowedLine(image, start_point, end_point, color[, thickness[, line_type[, shift[, tipLength]]]])
-        arrows = cv2.arrowedLine(face, landmark_points[0], (landmark_points[0][0] + gaze_point[0], landmark_points[0][1] - gaze_point[1]), (0,0,255), 2)
-        arrows = cv2.arrowedLine(face, landmark_points[1], (landmark_points[1][0] + gaze_point[0], landmark_points[1][1] - gaze_point[1]), (0,0,255), 2)
-        if image: cv2.imwrite('output/Gaze.png', arrows)
-        
-        if not image: 
+        arrows = cv2.arrowedLine(face, landmark_points[0], (
+            landmark_points[0][0] + gaze_point[0], landmark_points[0][1] - gaze_point[1]), (0, 0, 255), 2)
+        arrows = cv2.arrowedLine(face, landmark_points[1], (
+            landmark_points[1][0] + gaze_point[0], landmark_points[1][1] - gaze_point[1]), (0, 0, 255), 2)
+        if image:
+            cv2.imwrite('output/Gaze.png', arrows)
+
+        if not image:
             mouse = MouseController(precision='medium', speed='medium')
             mouse.move(gaze[0][0],gaze[0][1])
         
@@ -169,14 +168,20 @@ def main(args):
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--model', required=True)
-    parser.add_argument('-d','--device', default='CPU') #CPU, GPU
-    parser.add_argument('-hpe', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str, help='Set precision for Head Pose Estimation Model') 
-    parser.add_argument('-fld', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str,help='Set precision for Facial Landmark Detection Model') 
-    parser.add_argument('-ge', default='FP32', choices=['FP16','FP32','FP32-INT8'], type=str,help='Set precision for Gaze Estimation Model')  
-    parser.add_argument('-it','--input_type', default='image', type=str) #video, cam, image
-    parser.add_argument('-if','--input_file', default='bin/demo_1.png',type=str,) #path to file
-    parser.add_argument('-v', action='store_true', help='Increase verbosity of console output')
+
+    parser.add_argument('-d', '--device', default='CPU') 
+    parser.add_argument('-hpe', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Head Pose Estimation Model')
+    parser.add_argument('-fld', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Facial Landmark Detection Model')
+    parser.add_argument('-ge', default='FP32', choices=[
+                        'FP16', 'FP32', 'FP32-INT8'], type=str, help='Set precision for Gaze Estimation Model')
+    parser.add_argument('-it', '--input_type', default='image', type=str,
+                        choices=['video', 'cam', 'image']) 
+    parser.add_argument('-if', '--input_file',
+                        default='bin/demo_1.png', type=str, help='Set path if using input file') 
+    parser.add_argument('-v', action='store_true',
+                        help='Increase verbosity of console output')
 
     args = parser.parse_args()
 
